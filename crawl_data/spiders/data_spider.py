@@ -9,8 +9,8 @@ from translate import Translator
 class DataSpider(scrapy.Spider):
     name = "data_spider"
 
-    telegram_token = "7386566672:AAHzWiN3raclU6Cia4Gwz1y7WNMDCP6obXw"
-    telegram_chat_id = "-4206389177"
+    telegram_token = "YOUR_TELEGRAM_BOT_TOKEN"
+    telegram_chat_id = "YOUR_TELEGRAM_BOT_TOKEN"
 
     def __init__(self, url=None, keyword=None, limit=5, *args, **kwargs):
         super(DataSpider, self).__init__(*args, **kwargs)
