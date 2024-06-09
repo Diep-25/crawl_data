@@ -3,6 +3,7 @@ import logging
 import requests
 from unidecode import unidecode
 import re
+from translate import Translator
 
 
 class DataSpider(scrapy.Spider):
@@ -13,7 +14,11 @@ class DataSpider(scrapy.Spider):
 
     def __init__(self, url=None, keyword=None, limit=5, *args, **kwargs):
         super(DataSpider, self).__init__(*args, **kwargs)
-        self.start_urls = [url] if url else ["https://tuoitre.vn/"]
+        if url:
+            self.start_urls = [url]
+        else:
+            logging.warning("No URL provided. Parsing terminated.")
+            self.start_urls = []
         self.keyword = unidecode(keyword.replace("-", " ")) if keyword else None
         self.limit = int(limit)
         self.article_count = 0
@@ -30,19 +35,26 @@ class DataSpider(scrapy.Spider):
             response = requests.post(url, data=payload)
             response.raise_for_status()
         except requests.exceptions.RequestException as e:
-            logging.error(f"Failed to send message to Telegram: {e}")    
+            logging.error(f"Failed to send message to Telegram: {e}")
+
+    def translate_text(self, text):
+        translator = Translator(from_lang='en', to_lang='vi')
+        translation = translator.translate(text)
+        return translation       
 
     def parse(self, response):
         articles = response.css(self.tag_card)
 
         for article in articles:
-            title = article.css('a::text').get()
-            link = article.css('a::attr(href)').get()
+            title = article.css('h3 a::text').get()
+            link = article.css('h3 a::attr(href)').get()
 
             if title:
                 title_no_unidecode = title.strip().replace('\r', '').replace('\n', '')
                 title = unidecode(title.strip().lower())
-                title = re.sub(r'[^a-z0-9]+', ' ', title)  
+                title = re.sub(r'[^a-z0-9]+', ' ', title) 
+
+                title_no_unidecode = self.translate_text(title_no_unidecode) 
 
             if title and (self.keyword is None or self.keyword.lower() in title.lower()):
                 
