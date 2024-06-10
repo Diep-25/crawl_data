@@ -4,16 +4,18 @@ import requests
 from unidecode import unidecode
 import re
 from translate import Translator
+import json
 
 
 class DataSpider(scrapy.Spider):
     name = "data_spider"
 
-    telegram_token = "YOUR_TELEGRAM_BOT_TOKEN"
-    telegram_chat_id = "YOUR_TELEGRAM_BOT_TOKEN"
-
     def __init__(self, url=None, keyword=None, limit=5, *args, **kwargs):
         super(DataSpider, self).__init__(*args, **kwargs)
+
+        config_path = kwargs.get('config_path', 'config.json')
+        self.load_config(config_path)
+
         if url:
             self.start_urls = [url]
         else:
@@ -23,6 +25,16 @@ class DataSpider(scrapy.Spider):
         self.limit = int(limit)
         self.article_count = 0
         self.tag_card = kwargs.get('tag_card', 'article')
+
+    def load_config(self, config_path):
+        try:
+            with open(config_path, 'r') as f:
+                config = json.load(f)
+            self.telegram_token = config.get("TELEGRAM_BOT_TOKEN", "")
+            self.telegram_chat_id = config.get("TELEGRAM_CHAT_ID", "")
+        except FileNotFoundError:
+            logging.error(f"Config file not found: {config_path}")
+            raise    
 
     def send_to_telegram(self, message):
         url = f"https://api.telegram.org/bot{self.telegram_token}/sendMessage"
