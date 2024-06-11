@@ -18,18 +18,23 @@ def save_config(config):
 @app.route('/', methods=['GET', 'POST'])
 def home():
     if request.method == 'POST':
-        url = request.form['url']
-        limit = request.form['limit']
-        tag_card = request.form['tag_card']
-        keyword = request.form['keyword']
+        urls = request.form.getlist('url')
+        limits = request.form.getlist('limit')
+        tag_cards = request.form.getlist('tag_card')
+        keywords = request.form.getlist('keyword')
         
-        command = f"scrapy crawl data_spider -a url={url} -a limit={limit} -a tag_card={tag_card} -a keyword={keyword}"
+        for url, limit, tag_card, keyword in zip(urls, limits, tag_cards, keywords):
+            if not limit:
+                limit = 2
+
+            command = f"scrapy crawl data_spider -a url={url} -a limit={limit} -a tag_card={tag_card} -a keyword={keyword}"
+            
+            try:
+                subprocess.run(command, shell=True, capture_output=True, text=True)
+            except subprocess.CalledProcessError:
+                return jsonify({'status': 'error', 'message': f'Failed to run command for URL: {url}'})
         
-        try:
-            subprocess.run(command, shell=True, capture_output=True, text=True)
-            return jsonify({'status': 'success'})
-        except subprocess.CalledProcessError:
-            return jsonify({'status': 'error'})
+        return jsonify({'status': 'success'})
         
     return render_template('index.html')
 
